@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
 })
 
 # ── [1] Settings ────────────────────────────────────────────────────────
-WD       <- "/Users/vincedanniballe/Downloads/250713_pseudobulks"
+WD       <- "" #add your working directory here
 groups   <- c("Immune", "Neuronal_Support")
 PC_tag   <- "PreClinical_vs_Control"
 CL_tag   <- "Clinical_vs_Control"
@@ -163,7 +163,7 @@ draw(ht,
      annotation_legend_side = "right",
      merge_legends          = TRUE)
 
-###ggplots
+###z-score box and whisker plots
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages({
   library(dplyr)
@@ -232,7 +232,7 @@ out_tbl <- rbind(
              stringsAsFactors = FALSE)
 )
 
-# 4) write it to the Downloads folder
+# 4) write file
 write_csv(out_tbl,
           file = "~/Downloads/immune_neuronal_module_genes_zscores.csv")
 
