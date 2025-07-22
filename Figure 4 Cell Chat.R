@@ -1,11 +1,11 @@
-setwd("/Users/vincedanniballe/Library/Mobile Documents/com~apple~CloudDocs/Documents/02 - Labs/Goldstein Lab/AD/AD Manuscript/Cell_chat")
+setwd("") # your wd
 library(anndata)
 library(Matrix)
 library(CellChat)
 library(patchwork)
 library(future)
 
-ad <- read_h5ad("250711_AD_19_samples_cell_chat_granular_final.h5ad")
+ad <- read_h5ad("your_file.h5ad")
 
 counts <- Matrix::t( Matrix::Matrix(ad$X, sparse = TRUE) )        # genes × cells
 rownames(counts) <- ad$var_names                                  # gene symbols
@@ -18,9 +18,9 @@ data.input <- as( log1p( Matrix::t( Matrix::t(counts) / lib.size ) * 1e4 ),
 meta               <- ad$obs
 meta$samples       <- meta$orig_patients          # sample IDs CellChat needs
 meta$labels        <- meta$TCAT_all # cell-type labels
-status_levels      <- unique(meta$Alz_status)
+status_levels      <- unique(meta$Alz_status) #Control, Pre-Clinical, Clinical AD
 
-## ── 2 · run the FULL CellChat pipeline for each status ───────────────────
+## ── · run the FULL CellChat pipeline for each AD status ───────────────────
 CellChatDB.use <- subsetDB(CellChatDB.human)       # drops “Non-protein Signaling”
 plan(multisession, workers = 4)                    # parallel for heavy steps
 
@@ -55,7 +55,6 @@ saveRDS(object.list, "cellchat_object.list_three_statuses_done.rds")
 object.list <- readRDS("cellchat_object.list_three_statuses_done.rds")
 
 
-
 ## ── interactions and interaction strength  -------------------------
 object.list <- object.list[c("Control", "Pre-Clinical", "Clinical")]
 cellchat    <- mergeCellChat(object.list, add.names = names(object.list),
@@ -66,7 +65,7 @@ gg2 <- compareInteractions(cellchat, group = 1:3, measure = "weight",
                            show.legend = FALSE)                                # strength
 gg1 + gg2
 
-
+#pairwise datasets
 pair_CP <- mergeCellChat(
   object.list[c("Control", "Pre-Clinical")],
   add.names   = c("Control", "PreClinical"),
@@ -77,7 +76,7 @@ pair_CC <- mergeCellChat(
   add.names   = c("Control", "Clinical"),
   cell.prefix = TRUE
 )
-#### 1 · Differential expression on merged pair ──────────────────────────
+#### · Differential expression on merged pair ──────────────────────────
 features.name <- "PreClinical.merged"
 
 pair_CP <- identifyOverExpressedGenes(
@@ -132,7 +131,7 @@ net.up.Clin <- subsetCommunication(
 )
 
 
-#### 2 · Gene-level chord: mOSN + iOSN → all other types ─────────────────────
+#### · Gene-level chord  ─────────────────────
 # single-condition CellChat object for Clinical
 cc_Clin <- object.list[["Clinical"]]
 
@@ -147,16 +146,16 @@ pair_CP <- mergeCellChat(
 
 library(circlize)
 
-# 1) prep
+# prep
 cc_Pre <- object.list[["Pre-Clinical"]]
 circos.clear()
 
 cp_levels <- levels(cc_Pre@idents)
-#OSNs as targets
+#OSNs as targets, all else as sources
 tgt       <- which(cp_levels %in% c("mOSN","iOSN"))
 src       <- which(! cp_levels %in% c("mOSN","iOSN","INP"))
 
-# 3) chord plot of DE’d LR pairs
+# chord plot of DE’d LR pairs
 circos.clear()
 netVisual_chord_gene(
   object      = cc_Pre,
@@ -169,4 +168,21 @@ netVisual_chord_gene(
   title.name  = "Up in Pre-Clinical\n(all → mOSN+iOSN )"
 )
 
-#Repeat for OSNs as sources, and for Control vs. Clin 
+#OSNs as source, all else as targets
+src       <- which(cp_levels %in% c("mOSN","iOSN"))
+tgt       <- which(! cp_levels %in% c("mOSN","iOSN","INP"))
+
+# chord plot of DE’d LR pairs
+circos.clear()
+netVisual_chord_gene(
+  object      = cc_Pre,
+  sources.use = src,
+  targets.use = tgt,
+  slot.name   = "net",
+  net         = net.up.Pre,
+  lab.cex     = 0.8,
+  small.gap   = 1,       # much smaller per-sector gap
+  title.name  = "Up in Pre-Clinical\n(all → mOSN+iOSN )"
+)
+
+#Repeat for Control vs. Clin 
