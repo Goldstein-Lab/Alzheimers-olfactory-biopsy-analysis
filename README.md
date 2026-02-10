@@ -1,4 +1,4 @@
 # Alzheimers-olfactory-biopsy-analysis
-Detection of Alzheimer's Disease prior to symptom onset via olfactory biopsy analysis
+Olfactory cleft biopsy analysis of Alzheimer's Disease pathobiology across disease stages
 
 #GEO accession: GSE302937
